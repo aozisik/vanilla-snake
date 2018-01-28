@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SNAKE</title>
+    <style>body{font-family:'Avenir', 'Helvetica', 'Arial', sans-serif;color:#ECF0F1;background-color:#22313F} canvas{border:1px solid #34495E;} h1 {margin-bottom:-10px;font-size:24pt;} div {display:flex;flex-direction:column;height:80vh;justify-content:center;align-items:center;}</style>
+</head>
+<body>
+    <div>
+        <h1>Vanilla Snake</h1>
+        <p>Classic snake game implemented in vanilla js.</p>
+        <canvas id="canvas" width="400" height="400"></canvas>
+    </div>
+    <script>
+        var ctx;
+        var square = 20;
+        var canvasWidth = 400;
+        var canvasHeight = 400;
+        var directions = {
+            left: { x: -1, y: 0 },
+            top: { x: 0, y: -1 },
+            right: { x: 1, y: 0 },
+            down: { x: 0, y: 1 }
+        }        
+        // Game state
+        var score, bait, snake;
+        var tail, direction, nextDirection;
+        
+        window.onload = boot();
+        
+        function boot() {
+            var c = document.getElementById('canvas')
+            ctx = c.getContext('2d');
+            resetGameState()
+            setInterval(gameLoop, 75)
+            document.addEventListener('keydown', gameControl)
+        }
+
+        function gameLoop() {
+            // Next direction is buffered like this to ensure illegal moves are prevented.
+            // W
+            if (nextDirection) {
+                direction = nextDirection
+                nextDirection = null
+            }
+            
+            clearScene();
+
+            moveSnake();
+            drawBackground();
+            drawSnake();
+            drawBait();
+
+            controlBait();
+            detectCollision();
+        }
+
+        function resetGameState() {
+            tail = []
+            bait = [200, 300]
+            snake = [200, 200]
+
+            score = 0
+            direction = 'down'
+            nextDirection = null
+        }
+
+        function clearScene() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = '#22313F'
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        function drawSnake() {
+            ctx.fillStyle = '#1E8BC3'
+            for (var i=0; i < tail.length; i++) {
+                ctx.fillRect(tail[i][0], tail[i][1], square, square);
+            }
+
+            ctx.fillStyle = '#19B5FE'
+            ctx.fillRect(snake[0], snake[1], square, square);
+        }
+
+        // Teleports the snake to the other side.
+        function keepPointInRange(max, val) {
+            if (val < 0) {
+                return max
+            } else if (val >= max) {
+                return 0
+            } else {
+                return val
+            }
+        }
+
+        function movePoint(point, axis) {
+            // Moves a point on axis based on active direction
+            return point + square * directions[direction][axis]
+        }
+
+        function moveSnake() {
+            // Move its tail
+            if (tail.length) {
+                tail.unshift(snake)
+                tail.pop()
+            }
+            // Move the head to its new position
+            snake = [
+                keepPointInRange(canvasWidth, movePoint(snake[0], 'x')),
+                keepPointInRange(canvasHeight, movePoint(snake[1], 'y')),
+            ]
+        }
+
+        function isBaitEaten() {
+            return (bait[0] == snake[0] && bait[1] == snake[1])
+        }
+
+        function randomSquarePoint(max) {
+            return Math.floor(Math.random() * (max / square)) * square
+        }
+
+        function replaceBait() {
+            bait = [
+                randomSquarePoint(canvasWidth),
+                randomSquarePoint(canvasHeight),
+            ]
+        }
+
+        function elongateSnake() {
+            tail.push([])
+        }
+
+        function controlBait() {
+            if ( ! isBaitEaten()) {
+                // Do nothing
+                return;
+            }
+            score++;
+            replaceBait();
+            elongateSnake();
+        }
+
+        function drawBait() {
+            ctx.fillStyle = '#00E640';
+            ctx.fillRect(bait[0], bait[1], square, square);
+        }
+
+        function didSnakeBiteItself() {
+            if (tail.length < 2) {
+                return; // Collision is not yet possible?
+            }
+            for (var i = 0; i < tail.length; i++) {
+                if (tail[i][0] == snake[0] && tail[i][1] == snake[1]) {
+                    return true
+                }
+            }
+            return false            
+        }
+
+        function detectCollision() {
+            if (didSnakeBiteItself()) {
+                // Game over:
+                alert('Game over. Your score is: ' + score);
+                resetGameState();
+            }
+        }
+
+        function isReverseOf(direction2, arg1, arg2) {
+            return (direction == arg1 && direction2 == arg2) || (direction == arg2 && direction2 == arg1)
+        }
+
+        function changeDirection(dir) {
+            if (isReverseOf(dir, 'left', 'right')) {
+                return false   
+            }
+            if (isReverseOf(dir, 'top', 'down')) {
+                return false
+            }
+            nextDirection = dir
+        }
+
+        function gameControl($event) {
+            var keys = {
+                37: 'left',
+                38: 'top',
+                39: 'right',
+                40: 'down',
+            }
+            if ( ! keys.hasOwnProperty($event.which)) {
+                return
+            }
+            changeDirection(keys[$event.which])
+        }
+    </script>
+</body>
+</html>
