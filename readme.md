@@ -1,6 +1,6 @@
 # Vanilla Snake
 
-[Click here to play Vanilla Snake]().
+[Click here to play Vanilla Snake](https://aozisik.github.io/vanilla-snake/).
 
 ### What's This?
 
